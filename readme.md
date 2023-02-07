@@ -1,5 +1,7 @@
 The autocorrelator controls a delay stage and uses a Moku Go for readout of Quasi-CW signal using a 10 MHz photodiode.
 The readouts are flat DC signals with levels corresponding (supposedly linear) to the SHG intensity.
+The controller driver and delay stage abstract classes are borrowed from:
+https://github.com/Siwick-Research-Group/uedinst
 
 # Logic:
 
