@@ -1,54 +1,80 @@
 from moku.instruments import Datalogger
-import time
-import os
 from moku.instruments import Oscilloscope
-from mfa_delay_stage import MFA_PPD
+
+from uedinst.delay_stage import XPSController
+from time import sleep
 
 
-osc = Oscilloscope('192.168.123.45')
-dLogger = Datalogger('192.168.###.###', force_connect=False)
+
+moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
+
+
+
+osc = Oscilloscope(moku_address, force_connect=True)
+print('done')
+dLogger = Datalogger(moku_address, force_connect=True)
 # https://apis.liquidinstruments.com/reference/oscilloscope/
-stage = MFA_PPD()
+xps = XPSController()
 
 
-###
-PEAK_POS_MM = 22.652
-RANGE_PS = .2
-RANGE_MM = stage.delay_to_distance(RANGE_PS)
-STEP_SIZE_MM = 100e-6  # 100 nm step size
-
-# Range of motion
-MAX_POS_MM = PEAK_POS_MM + RANGE_MM
-MIN_POS_MM = PEAK_POS_MM - RANGE_MM
+# stage = xps.autocorr_stage
+# stage.absolute_move((min_move+max_move)/2)
+# min_move = stage.min_limit
+# max_move = stage.max_limit
 
 
-# Set data logger to osc
-dLogger.set_frontend(channel=2, impedance='1MOhm',
-                     coupling="DC", range="5Vpp")
-# Log 100 samples per second
-dLogger.set_samplerate(1000)
-dLogger.set_acquisition_mode(mode='Precision')
+
+# while True:
+#     try:
+#         stage.absolute_move(min_move)
+#         sleep(2)
+#         stage.absolute_move(max_move)
+#         sleep(2)
+#     except KeyboardInterrupt:
+#         break
+
+# ###
+# PEAK_POS_MM = 22.652
+# RANGE_PS = .2
+# RANGE_MM = stage.delay_to_distance(RANGE_PS)
+# STEP_SIZE_MM = 100e-6  # 100 nm step size
+
+# # Range of motion
+# MAX_POS_MM = PEAK_POS_MM + RANGE_MM
+# MIN_POS_MM = PEAK_POS_MM - RANGE_MM
 
 
-###
-stage.absolute_move(MIN_POS_MM)
+# # # Set data logger to osc
+# # dLogger.set_frontend(channel=2, impedance='1MOhm',
+# #                      coupling="DC", range="5Vpp")
+# # # Log 100 samples per second
+# # dLogger.set_samplerate(1000)
+# # dLogger.set_acquisition_mode(mode='Precision')
 
-while stage.current_position() < MAX_POS_MM:
-    logFile = dLogger.start_logging(duration=10,
-                                    file_name_prefix=str(stage.current_position()).replace(".", "_"))
+# # print("Logger setup done.")
 
-    is_logging = True
+# ###
 
-    while is_logging:
-        time.sleep(0.5)
+# print(f"Moving stage to {MIN_POS_MM}")
+# stage.absolute_move(MIN_POS_MM)
+# print(f"Stage moved to {MIN_POS_MM}")
 
-        progress = dLogger.logging_progress()
-        remaining_time = int(progress['time_to_end'])
-        is_logging = remaining_time > 1
-        print(f"Remaining time {remaining_time} seconds")
+# # while stage.current_position() < MAX_POS_MM:
+# #     logFile = dLogger.start_logging(duration=10,
+# #                                     file_name_prefix=str(stage.current_position()).replace(".", "_"))
 
-    dLogger.download("persist", logFile, os.path.join(os.getcwd(), logFile))
+# #     is_logging = True
 
-    stage.relative_move(STEP_SIZE_MM)
+# #     while is_logging:
+# #         time.sleep(0.5)
 
-dLogger.relinquish_ownership()
+# #         progress = dLogger.logging_progress()
+# #         remaining_time = int(progress['time_to_end'])
+# #         is_logging = remaining_time > 1
+# #         print(f"Remaining time {remaining_time} seconds")
+
+# #     dLogger.download("persist", logFile, os.path.join(os.getcwd(), logFile))
+
+# #     stage.relative_move(STEP_SIZE_MM)
+
+# # dLogger.relinquish_ownership()
