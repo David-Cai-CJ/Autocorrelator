@@ -17,7 +17,6 @@ moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
 
 osc = Oscilloscope(moku_address, force_connect=True)
 dLogger = Datalogger(moku_address, force_connect=True)
-print('Established Moku connections')
 # https://apis.liquidinstruments.com/reference/oscilloscope/
 xps = XPSController(reset=False)
 
