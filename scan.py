@@ -29,9 +29,9 @@ max_move = stage.max_limit
 
 # signal limits for ~100fs pulse
 PEAK_POS_MM = 22.6520
-RANGE_PS = .4
+RANGE_PS = .2
 RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
-STEP_SIZE_MM = 400e-6  # in mm
+STEP_SIZE_MM = 500e-6  # in mm
 
 # Range of motion
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
