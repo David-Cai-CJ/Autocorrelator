@@ -20,4 +20,4 @@ have to figure out how to close socket connections
 
 
 
-'Starting with Multi-instrument Mode'
+Might consider use a wrapper if Logging & Plotting need to be done at the same time.
