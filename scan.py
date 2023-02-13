@@ -74,10 +74,13 @@ print(f"Moving stage to {MIN_POS_MM}")
 stage.absolute_move(MIN_POS_MM)
 print(f"Stage moved to {stage.current_position()}")
 
-while stage.current_position() <= MAX_POS_MM:
+pos = np.round(np.linspace(MIN_POS_MM, MAX_POS_MM +
+               STEP_SIZE_MM, STEP_SIZE_MM), 5)
+
+for loc in tqdm(pos):
+    stage.absolute_move(loc)
     prefix = str(stage.current_position()).replace(".", "_")
     print(prefix)
-    # print(prefix.rjust(30), np.mean(osc.get_data()['ch2']))
     logFile = dLogger.start_logging(duration=1,
                                     file_name_prefix=prefix)
 
@@ -94,7 +97,6 @@ while stage.current_position() <= MAX_POS_MM:
             is_logging = False
 
     filenames.append(logFile['file_name'])
-    stage.relative_move(STEP_SIZE_MM)
 
 
 for fname in filenames:
