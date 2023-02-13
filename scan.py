@@ -22,20 +22,20 @@ xps = XPSController(reset=False)
 
 stage = xps.autocorr_stage
 
-### hardware limits
+# hardware limits
 min_move = stage.min_limit
 max_move = stage.max_limit
 
 
-### signal limits for ~100fs pulse
+# signal limits for ~100fs pulse
 PEAK_POS_MM = 22.6520
-RANGE_PS = .2
+RANGE_PS = .4
 RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
-STEP_SIZE_MM = 100e-6  # 100 nm step size
+STEP_SIZE_MM = 400e-6  # in mm
 
 # Range of motion
-MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM,4)
-MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM,4)
+MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
+MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 
 
 # Set data logger to osc
@@ -45,13 +45,11 @@ dLogger.set_frontend(channel=2, impedance='1MOhm',
 dLogger.set_samplerate(1000)
 dLogger.set_acquisition_mode(mode='Precision')
 
-
 ###
 
 filenames = []
 
-
-stage.absolute_move(MIN_POS_MM - 5* RANGE_MM)
+stage.absolute_move(MIN_POS_MM - 5 * RANGE_MM)
 print(f"Stage moved to {stage.current_position()}")
 logFile = dLogger.start_logging(duration=1,
                                 file_name_prefix='calibration')
@@ -69,16 +67,15 @@ while is_logging:
 
 filenames.append(logFile['file_name'])
 
-################ calibration for dark current done
+# calibration for dark current done
 
 print("Start Scanning")
 print(f"Moving stage to {MIN_POS_MM}")
 stage.absolute_move(MIN_POS_MM)
 print(f"Stage moved to {stage.current_position()}")
 
-
 while stage.current_position() <= MAX_POS_MM:
-    prefix = str(round(stage.current_position(),5)).replace(".", "_")
+    prefix = str(stage.current_position()).replace(".", "_")
     print(prefix)
     # print(prefix.rjust(30), np.mean(osc.get_data()['ch2']))
     logFile = dLogger.start_logging(duration=1,
