@@ -28,8 +28,8 @@ max_move = stage.max_limit
 
 
 # signal limits for ~100fs pulse
-PEAK_POS_MM = 22.6520
-RANGE_PS = .2
+PEAK_POS_MM = 22.658
+RANGE_PS = .22
 RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
 STEP_SIZE_MM = 500e-6  # in mm
 
@@ -74,13 +74,13 @@ print(f"Moving stage to {MIN_POS_MM}")
 stage.absolute_move(MIN_POS_MM)
 print(f"Stage moved to {stage.current_position()}")
 
-pos = np.round(np.linspace(MIN_POS_MM, MAX_POS_MM +
-               STEP_SIZE_MM, STEP_SIZE_MM), 5)
+pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
+               STEP_SIZE_MM, STEP_SIZE_MM), 4)
 
-for loc in tqdm(pos):
+for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
     prefix = str(stage.current_position()).replace(".", "_")
-    print(prefix)
+    print('\n'+loc)
     logFile = dLogger.start_logging(duration=1,
                                     file_name_prefix=prefix)
 
