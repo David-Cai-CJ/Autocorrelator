@@ -5,7 +5,7 @@ from time import sleep
 import os
 import numpy as np
 import socket
-
+import tqdm
 
 moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
 
