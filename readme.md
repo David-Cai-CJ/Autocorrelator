@@ -21,3 +21,9 @@ have to figure out how to close socket connections
 
 
 Might consider use a wrapper if Logging & Plotting need to be done at the same time.
+
+
+- Data stream fluctuation (either Osc or Logger...)
+- what's hystersis for triggering?
+- mokuCLI for streaming data (does it output list?)
+- quick scan not working (osc.get_data have peaks, look up on github for how ppl achieve this)
