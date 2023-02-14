@@ -28,7 +28,7 @@ max_move = stage.max_limit
 
 
 # signal limits for ~100fs pulse
-PEAK_POS_MM = 22.658
+PEAK_POS_MM = 22.659
 RANGE_PS = .22
 RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
 STEP_SIZE_MM = 500e-6  # in mm
@@ -42,14 +42,14 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 dLogger.set_frontend(channel=2, impedance='1MOhm',
                      coupling="DC", range="10Vpp")
 # Log 100 samples per second
-dLogger.set_samplerate(1000)
+dLogger.set_samplerate(10000)
 dLogger.set_acquisition_mode(mode='Precision')
 
 ###
 
 filenames = []
 
-stage.absolute_move(MIN_POS_MM - 5 * RANGE_MM)
+stage.absolute_move(MIN_POS_MM - 10 * RANGE_MM)
 print(f"Stage moved to {stage.current_position()}")
 logFile = dLogger.start_logging(duration=1,
                                 file_name_prefix='calibration')
@@ -79,8 +79,8 @@ pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
 
 for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
-    prefix = str(stage.current_position()).replace(".", "_")
-    print('\n'+loc)
+    prefix = f"{stage.current_position():.4f}".replace(".", "_")
+    print('\n'+ str(loc))
     logFile = dLogger.start_logging(duration=1,
                                     file_name_prefix=prefix)
 
@@ -102,7 +102,7 @@ for loc in tqdm.tqdm(pos):
 for fname in filenames:
     dLogger.download("persist",
                      fname,
-                     './logging' + os.sep + fname)
+                     r'./logging/' + os.sep + fname)
 
 dLogger.relinquish_ownership()
 # osc.relinquish_ownership()
