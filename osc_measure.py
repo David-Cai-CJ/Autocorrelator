@@ -24,8 +24,8 @@ osc = Oscilloscope(moku_address, force_connect=True)
 osc.set_source(2,source='Input2')
 osc.set_acquisition_mode(mode='Precision')
 osc.set_hysteresis("Absolute", 0.03)
-osc.set_trigger(auto_sensitivity=False,hf_reject=False, noise_reject=False,mode='Normal', level = 0.05, source='Input2')
-osc.set_timebase(-.5e-6, 1.2e-6)
+osc.set_trigger(auto_sensitivity=False,hf_reject=False, noise_reject=False,mode='Normal', level = 0.09, source='Input2')
+osc.set_timebase(-.6e-6, 1.e-6)
 # https://apis.liquidinstruments.com/reference/oscilloscope/
 xps = XPSController(reset=False)
 
@@ -41,7 +41,7 @@ PEAK_POS_MM = 11.65
 # RANGE_PS = .5
 
 # RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
-RANGE_MM = 0.05
+RANGE_MM = 0.1
 ## 0.03 mm per 100 fs
 
 STEP_SIZE_MM = 500e-6  # in mm
@@ -55,7 +55,7 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 
 # stage.absolute_move(MIN_POS_MM - 10 * RANGE_MM)
 
-stage.absolute_move(PEAK_POS_MM)
+stage.absolute_move(MIN_POS_MM - 10*RANGE_MM)
 print(f"Stage moved to {stage.current_position()}")
 
 measurement= osc.get_data()
