@@ -28,11 +28,15 @@ max_move = stage.max_limit
 
 
 # signal limits for ~100fs pulse
-PEAK_POS_MM = 22.659
-RANGE_PS = .22
-RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
-STEP_SIZE_MM = 500e-6  # in mm
+PEAK_POS_MM = 11.64
+# RANGE_PS = .5
 
+# RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
+RANGE_MM = 0.03
+## 0.03 mm per 100 fs
+
+STEP_SIZE_MM = 500e-6  # in mm
+# STEP_SIZE_MM = RANGE_MM/100  # in mm
 # Range of motion
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
 MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
@@ -42,7 +46,7 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 dLogger.set_frontend(channel=2, impedance='1MOhm',
                      coupling="DC", range="10Vpp")
 # Log 100 samples per second
-dLogger.set_samplerate(10000)
+dLogger.set_samplerate(5e5)
 dLogger.set_acquisition_mode(mode='Precision')
 
 ###
