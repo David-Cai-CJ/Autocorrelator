@@ -51,10 +51,11 @@ filenames = []
 
 stage.absolute_move(MIN_POS_MM - 10 * RANGE_MM)
 print(f"Stage moved to {stage.current_position()}")
-logFile = dLogger.start_logging(duration=1,
+logFile = dLogger.start_logging(duration=4,
                                 file_name_prefix='calibration')
 
 is_logging = True
+
 
 while is_logging:
     sleep(0.5)
@@ -69,6 +70,7 @@ filenames.append(logFile['file_name'])
 
 # calibration for dark current done
 
+
 print("Start Scanning")
 print(f"Moving stage to {MIN_POS_MM}")
 stage.absolute_move(MIN_POS_MM)
@@ -80,8 +82,8 @@ pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
 for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
     prefix = f"{stage.current_position():.4f}".replace(".", "_")
-    print('\n'+ str(loc))
-    logFile = dLogger.start_logging(duration=1,
+    print('\n' + str(loc))
+    logFile = dLogger.start_logging(duration=4,
                                     file_name_prefix=prefix)
 
     is_logging = True
@@ -102,7 +104,7 @@ for loc in tqdm.tqdm(pos):
 for fname in filenames:
     dLogger.download("persist",
                      fname,
-                     r'./logging/' + os.sep + fname)
+                     r'./logging/spitfire/' + fname)
 
 dLogger.relinquish_ownership()
 # osc.relinquish_ownership()
