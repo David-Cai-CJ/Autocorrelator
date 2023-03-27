@@ -42,14 +42,14 @@ PEAK_POS_MM = 11.6540
 # RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
 
 # First set -- try to resolve the fringes in the middle
-RANGE_MM = 0.025
-STEP_SIZE_MM = 1e-4  # 100 nm
+# RANGE_MM = 0.025
+# STEP_SIZE_MM = 1e-4  # 100 nm
 # 0.03 mm per 100 fs
 
 
 # # Second set -- long scan period
-# RANGE_MM = 0.1
-# STEP_SIZE_MM = 1e-3  # 1um
+RANGE_MM = 0.075
+STEP_SIZE_MM = 1e-3  
 
 
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
@@ -58,12 +58,13 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 
 ###
 
-stage.absolute_move(0)
+stage.absolute_move(11)
 print(f"Stage moved to {stage.current_position()}")
 
+# folder = r'./logging/' + os.sep  + 'post_adjust_pd' + os.path.sep
 measurement = osc.get_data()
 calibration_data = np.array([measurement['time'], measurement['ch2']]).T
-np.savetxt(r'./logging/' + os.sep + 'calibration' +
+np.savetxt( r'./logging/' + os.sep + 'calibration' +
            '.csv', calibration_data, delimiter=',')
 
 # plt.plot(*calibration_data.T, marker='o', ls=None, ms=.2)
@@ -77,23 +78,30 @@ pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
 for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
     prefix = f"{stage.current_position():.4f}".replace(".", "_")
-    print('\n' + str(loc))
-
-    n_samples = 10
+    n_samples = 5
     Vmax = []
-    for n in n_samples:
+    step_folder = r'./logging/'+rf'{loc}'.replace('.','_')
+
+    try:
+        os.makedirs(step_folder)
+    except FileExistsError:
+        pass
+
+    for n in np.arange(n_samples):
         # Current proportional to Voltage. Take max Vout
         measurement = osc.get_data()
         data = np.array([measurement['time'], measurement['ch2']]).T
-        Vmax.append(np.max(measurement['ch2']))
+        np.savetxt(step_folder+os.path.sep+f'{n}' + '.csv', data, delimiter=',')
+        Vmax.append(np.sum(measurement['ch2']))
 
-    with open('/logging/new_osc_scan.csv', 'a+', newline='', encoding='utf-8') as f:
+
+    with open(r'./logging/new_osc_scan.csv', 'a+', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
-        writer.writerows(loc, np.mean(Vmax), np.std(Vmax))
+        writer.writerow([loc, np.mean(Vmax), np.std(Vmax)])
 
     # if we are saving one file per step
     # measurement = osc.get_data()
     # data = np.array([measurement['time'], measurement['ch2']]).T
-    # np.savetxt(r'./logging/' + os.sep + prefix + '.csv', data, delimiter=',')
+    # np.savetxt(folder + prefix + '.csv', data, delimiter=',')
 
 osc.relinquish_ownership()

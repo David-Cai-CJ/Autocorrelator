@@ -7,7 +7,10 @@ import os
 from scipy.optimize import curve_fit
 import matplotlib.ticker as mtick
 import sys
+import matplotlib
 
+
+matplotlib.use('TKAgg')
 
 def lor(x, x0, g):
     return 1/np.pi/g/(1+((x-x0)/g)**2)
@@ -18,10 +21,10 @@ def gau(x, x0, s):
 
 
 def model(x, aL, aG, x0, g, s, C):
-    return aG/1000 * gau(x, x0, s) + C + aL/1000 * lor(x, x0, g)
+    return aG * gau(x, x0, s) + C + aL * lor(x, x0, g)
 
 
-# dir = 'logging' + os.path.sep + 'spitfire_osc_wide_window'
+# dir = 'logging' + os.path.sep + 'post_adjust_pd'
 # files = sorted(glob.glob(dir + '/[0-9]*.csv'))
 
 # calibration = np.loadtxt(
@@ -38,16 +41,16 @@ def model(x, aL, aG, x0, g, s, C):
 
 # for f in files:
 #     t, v = np.loadtxt(f, delimiter=',').T
-#     sig.append(np.sum(v)/len(v))
-#     # sig.append(np.max(v))
+#     # sig.append(np.sum(v)/len(v))
+#     sig.append(np.max(v))
 # sig = np.array(sig)
 
 
 #### If already compiled into one file
-file = ''
-pos_mm, sig= np.loadtxt(file, delimiter=',').T
+file = 'logging/pre_second_adjust_pd/pre_second_adjust_pd.csv'
+pos_mm, sig, error= np.loadtxt(file, delimiter=',').T
 
-p0 = [1.5, .2, 11.655, .006, .008, .158]
+p0 = [1, .2, 11.655, .01, .025, 56]
 
 plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
 plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)
@@ -57,8 +60,8 @@ plt.show()
 
 if len(sys.argv) > 1:
     fit, err = curve_fit(model, pos_mm, sig, p0=p0,
-                         bounds=([.01, 0.01, p0[2] - .1, .001, .001, p0[-1] - .4],
-                                 [3, 10, p0[2] + .1, .01, .05, p0[-1] + .4]))
+                         bounds=([.01, 0.01, p0[2] - .1, .001, .001, p0[-1] - 5],
+                                 [30, 100, p0[2] + .1, .01, .05, p0[-1] + 5]))
 
     aL, aG, x0, g, s, C = fit
 
@@ -79,9 +82,9 @@ if len(sys.argv) > 1:
 
     ax.plot(t_fs, sig, 'k.', ms=1.5, markevery=1, label='Data')
     ax.plot(t_fs, model(pos_mm, *fit), c='b', lw=1,  label='Fit')
-    ax.plot(t_fs, gau(pos_mm, x0, s)*aG/1000 + C, '-.',
+    ax.plot(t_fs, gau(pos_mm, x0, s)*aG + C, '-.',
             c='green', lw=1, alpha=.5,  label='Gaussian')
-    ax.plot(t_fs, lor(pos_mm, x0, g)*aL/1000 + C, '--',
+    ax.plot(t_fs, lor(pos_mm, x0, g)*aL + C, '--',
             c='r', lw=1, alpha=.5,   label='Lorentzian')
     ax.set_xlabel('Delay (fs)')
     ax.set_ylabel('Signal (arb. unit)')
