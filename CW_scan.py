@@ -32,10 +32,10 @@ PEAK_POS_MM = 11.64
 # RANGE_PS = .5
 
 # RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
-RANGE_MM = 0.03
-## 0.03 mm per 100 fs
+RANGE_MM = 3e-2
+# 0.03 mm per 100 fs
 
-STEP_SIZE_MM = 500e-6  # in mm
+STEP_SIZE_MM = 1e-3  # in mm
 # STEP_SIZE_MM = RANGE_MM/100  # in mm
 # Range of motion
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
