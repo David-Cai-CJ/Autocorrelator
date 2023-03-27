@@ -1,13 +1,11 @@
-from moku.instruments import Datalogger
 from moku.instruments import Oscilloscope
 from uedinst.delay_stage import XPSController
-from time import sleep
 import os
 import numpy as np
 import socket
 import tqdm
 import matplotlib
-import matplotlib.pylab as plt
+import csv
 
 matplotlib.use('TKAgg')
 
@@ -75,13 +73,27 @@ print("Start Scanning\n\n")
 pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
                STEP_SIZE_MM, STEP_SIZE_MM), 4)
 
+
 for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
     prefix = f"{stage.current_position():.4f}".replace(".", "_")
     print('\n' + str(loc))
 
-    measurement = osc.get_data()
-    data = np.array([measurement['time'], measurement['ch2']]).T
-    np.savetxt(r'./logging/' + os.sep + prefix + '.csv', data, delimiter=',')
+    n_samples = 10
+    Vmax = []
+    for n in n_samples:
+        # Current proportional to Voltage. Take max Vout
+        measurement = osc.get_data()
+        data = np.array([measurement['time'], measurement['ch2']]).T
+        Vmax.append(np.max(measurement['ch2']))
+
+    with open('/logging/new_osc_scan.csv', 'a+', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerows(loc, np.mean(Vmax), np.std(Vmax))
+
+    # if we are saving one file per step
+    # measurement = osc.get_data()
+    # data = np.array([measurement['time'], measurement['ch2']]).T
+    # np.savetxt(r'./logging/' + os.sep + prefix + '.csv', data, delimiter=',')
 
 osc.relinquish_ownership()

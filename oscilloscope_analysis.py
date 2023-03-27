@@ -21,26 +21,31 @@ def model(x, aL, aG, x0, g, s, C):
     return aG/1000 * gau(x, x0, s) + C + aL/1000 * lor(x, x0, g)
 
 
-dir = 'logging' + os.path.sep + 'spitfire_osc_wide_window'
-files = sorted(glob.glob(dir + '/[0-9]*.csv'))
+# dir = 'logging' + os.path.sep + 'spitfire_osc_wide_window'
+# files = sorted(glob.glob(dir + '/[0-9]*.csv'))
 
-calibration = np.loadtxt(
-    dir + os.path.sep + 'calibration.csv', delimiter=',').T
-plt.plot(*calibration, 'k.', ls='None', label='Calibration')
-plt.legend()
-plt.show()
+# calibration = np.loadtxt(
+#     dir + os.path.sep + 'calibration.csv', delimiter=',').T
 
-# Here, its whether the max V or average
-pos_mm = np.array([float(os.path.basename(f).replace(
-    '.csv', '').replace('_', '.')) for f in files])
-sig = []
+# plt.plot(*calibration, 'k.', ls='None', label='Calibration')
+# plt.legend()
+# plt.show()
 
-for f in files:
-    t, v = np.loadtxt(f, delimiter=',').T
-    sig.append(np.sum(v)/len(v))
-    # sig.append(np.max(v))
-sig = np.array(sig)
+# # Here, its whether the max V or average
+# pos_mm = np.array([float(os.path.basename(f).replace(
+#     '.csv', '').replace('_', '.')) for f in files])
+# sig = []
 
+# for f in files:
+#     t, v = np.loadtxt(f, delimiter=',').T
+#     sig.append(np.sum(v)/len(v))
+#     # sig.append(np.max(v))
+# sig = np.array(sig)
+
+
+#### If already compiled into one file
+file = ''
+pos_mm, sig= np.loadtxt(file, delimiter=',').T
 
 p0 = [1.5, .2, 11.655, .006, .008, .158]
 
