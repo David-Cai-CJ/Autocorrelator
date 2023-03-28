@@ -47,10 +47,11 @@ def model(x, aL, aG, x0, g, s, C):
 
 
 #### If already compiled into one file
-file = 'logging/double_peak_zoomed_2/summary.csv'
-pos_mm, sig, error= np.loadtxt(file, delimiter=',').T
+folder = 'post_oscillator_adjust'
+file = 'logging/' + folder + '/summary.csv'
+pos_mm, sig, error= np.loadtxt(file, delimiter=',').T[:,:85]
 
-p0 = [1, .5, 11.656, .01, .015, 56]
+p0 = [.6, .25, 11.650, .01, .008, 53]
 
 plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
 plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)
@@ -88,7 +89,7 @@ if len(sys.argv) > 1:
             c='r', lw=1, alpha=.5,   label='Lorentzian')
     ax.set_xlabel('Delay (fs)')
     ax.set_ylabel('Signal (arb. unit)')
-    ax.legend(loc=0)
+    ax.legend(loc=1)
 
     res_ax.plot(t_fs, (sig - model(pos_mm, *fit))/sig * 100, 'b-', lw=1)
     res_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
@@ -102,6 +103,6 @@ if len(sys.argv) > 1:
 
     ax.text(.05, .95, s=text_out, transform=ax.transAxes, va='top')
 
-    fig.savefig(r'./figures/autocorrelation_new.pdf',
+    fig.savefig(r'./figures/'+folder+'.pdf',
                 format='pdf', bbox_inches='tight')
     fig.show()

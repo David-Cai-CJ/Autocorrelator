@@ -37,7 +37,7 @@ max_move = stage.max_limit
 
 
 # signal limits for ~100fs pulse
-PEAK_POS_MM = 11.6540
+PEAK_POS_MM = 11.6550
 
 # RANGE_PS = .5
 # RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
@@ -49,7 +49,7 @@ PEAK_POS_MM = 11.6540
 
 
 # # Second set -- long scan period
-RANGE_MM = 0.035
+RANGE_MM = 0.04
 STEP_SIZE_MM = 5e-4
 
 
@@ -62,7 +62,7 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 stage.absolute_move(10)
 print(f"Stage moved to {stage.current_position()}")
 
-folder = r'double_peak_zoomed_2'
+folder = r'post_oscillator_adjust'
 n_samples = 1
 
 
