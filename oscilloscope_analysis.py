@@ -47,7 +47,7 @@ def model(x, aL, aG, x0, g, s, C):
 
 
 #### If already compiled into one file
-file = 'logging/pre_second_adjust_pd/pre_second_adjust_pd.csv'
+file = 'logging/double_peak_zoomed/summary.csv'
 pos_mm, sig, error= np.loadtxt(file, delimiter=',').T
 
 p0 = [1, .2, 11.655, .01, .025, 56]
