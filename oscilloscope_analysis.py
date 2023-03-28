@@ -47,10 +47,10 @@ def model(x, aL, aG, x0, g, s, C):
 
 
 #### If already compiled into one file
-file = 'logging/double_peak_zoomed/summary.csv'
+file = 'logging/double_peak_zoomed_2/summary.csv'
 pos_mm, sig, error= np.loadtxt(file, delimiter=',').T
 
-p0 = [1, .2, 11.655, .01, .025, 56]
+p0 = [1, .5, 11.656, .01, .015, 56]
 
 plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
 plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)

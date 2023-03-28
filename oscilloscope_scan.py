@@ -6,6 +6,7 @@ import socket
 import tqdm
 import matplotlib
 import csv
+import matplotlib.pylab as plt
 
 matplotlib.use('TKAgg')
 
@@ -48,8 +49,8 @@ PEAK_POS_MM = 11.6540
 
 
 # # Second set -- long scan period
-RANGE_MM = 0.04
-STEP_SIZE_MM = 5e-3
+RANGE_MM = 0.035
+STEP_SIZE_MM = 5e-4
 
 
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
@@ -61,15 +62,21 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 stage.absolute_move(10)
 print(f"Stage moved to {stage.current_position()}")
 
-folder = r'double_peak_zoomed'
+folder = r'double_peak_zoomed_2'
+n_samples = 1
 
-n_samples = 5
+
+try:
+    os.makedirs(os.path.sep.join(['logging',folder]))
+except FileExistsError:
+    pass
+
 
 ########
 measurement = osc.get_data()
 calibration_data = np.array([measurement['time'], measurement['ch2']]).T
 
-np.savetxt(r'./logging/' + os.sep + folder + os.path.sep + 'calibration'
+np.savetxt(r'./logging' + os.sep + folder + os.path.sep + 'calibration'
            '.csv', calibration_data, delimiter=',')
 
 print("Start Scanning\n\n")
@@ -77,6 +84,11 @@ print("Start Scanning\n\n")
 pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
                STEP_SIZE_MM, STEP_SIZE_MM), 4)
 
+
+fig, ax = plt.subplots()
+
+v_data = []
+e_v_data = []
 
 for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
@@ -99,10 +111,24 @@ for loc in tqdm.tqdm(pos):
                    f'{n}' + '.csv', data, delimiter=',')
         Vmax.append(np.sum(measurement['ch2']))
 
+    ax.clear()
+
+    v_data.append(np.mean(Vmax))
+    e_v_data.append(np.std(Vmax))
+
+    ax.errorbar(np.array(pos[:len(v_data)]), np.array(v_data), yerr = e_v_data)
+
+
+
     with open(r'./logging' + os.path.sep + folder + os.path.sep +
               'summary.csv', 'a+', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow([loc, np.mean(Vmax), np.std(Vmax)])
+    plt.pause(.1)
+
+plt.show(block=True)
+
+
 
 
 osc.relinquish_ownership()
