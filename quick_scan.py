@@ -19,12 +19,11 @@ moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
 
 
 osc = Oscilloscope(moku_address, force_connect=True)
-# osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
 osc.set_source(2, source='Input2')
 osc.set_acquisition_mode(mode='Precision')
 osc.set_hysteresis("Absolute", 0.03)
 osc.set_trigger(auto_sensitivity=False, hf_reject=False,
-                noise_reject=False, mode='Normal', level=0.09, source='Input2')
+                noise_reject=False, mode='Single', level=0.09, source='Input2')
 osc.set_timebase(-.6e-6, 1.e-6)
 # https://apis.liquidinstruments.com/reference/oscilloscope/
 xps = XPSController(reset=False)
