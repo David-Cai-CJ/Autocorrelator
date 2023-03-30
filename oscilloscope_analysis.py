@@ -47,11 +47,11 @@ def model(x, aL, aG, x0, g, s, C):
 
 
 #### If already compiled into one file
-folder = 'post_oscillator_adjust'
+folder = 'HVAC_morning_thurs'
 file = 'logging/' + folder + '/summary.csv'
 pos_mm, sig, error= np.loadtxt(file, delimiter=',').T[:,:85]
 
-p0 = [.6, .25, 11.650, .01, .008, 53]
+p0 = [.6, .25, 11.656, .01, .008, 45]
 
 plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
 plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)
