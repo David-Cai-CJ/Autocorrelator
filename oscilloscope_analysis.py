@@ -14,18 +14,18 @@ matplotlib.use('TKAgg')
 
 
 def lor(x, x0, g):
-    return 1/np.pi/g/(1+((x-x0)/g)**2)
+    return 1/np.pi/(1+((x-x0)/g)**2)
 
 
 def gau(x, x0, s):
-    return 1/np.sqrt(2/np.pi)/s*np.exp(-1/2*(x-x0)**2/s**2)
+    return 1/np.sqrt(2/np.pi)*np.exp(-1/2*(x-x0)**2/s**2)
 
 
 def model(x, aL, aG, x0, g, s, C):
     return (aG * gau(x, x0, s) + C + aL * lor(x, x0, g))
 
 
-folder = 'double_peak_zoomed'
+folder = 'HVAC_morning_thurs'
 dir = 'logging' + os.path.sep + folder
 files = sorted(glob.glob(dir + '/[0-9]*.csv'))
 
@@ -47,7 +47,8 @@ for sf in subfolders:
     signal = []
     for f in files:
         t, v = np.loadtxt(f, delimiter=',').T
-        cond = v < 0
+        # cond = v < 0
+        cond = np.full(len(v), True)
         signal.append(np.sum(np.abs(np.diff(t)[cond[1:]]*v[1:][cond[1:]])))
     sig.append(np.mean(signal))
 
@@ -62,7 +63,7 @@ plt.show(block=True)
 # file = 'logging/' + folder + '/summary.csv'
 # pos_mm, sig, error = np.loadtxt(file, delimiter=',').T
 
-p0 = [2.5, 5, 11.657, .01, .008, 50]
+p0 = [2.5, 5, 11.657, .01, .008, 110]
 
 plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
 plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)
