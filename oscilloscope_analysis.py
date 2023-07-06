@@ -12,6 +12,18 @@ import matplotlib
 
 matplotlib.use('TKAgg')
 
+####
+folder = 'double_peak_zoomed'
+
+
+dir = 'logging' + os.path.sep + folder
+files = sorted(glob.glob(dir + '/[0-9]*.csv'))
+
+calibration = np.loadtxt(
+    dir + os.path.sep + 'calibration.csv', delimiter=',').T
+
+#####
+
 
 def lor(x, x0, g):
     return 1/np.pi/(1+((x-x0)/g)**2)
@@ -25,17 +37,12 @@ def model(x, aL, aG, x0, g, s, C):
     return (aG * gau(x, x0, s) + C + aL * lor(x, x0, g))
 
 
-folder = 'double_peak_zoomed'
-dir = 'logging' + os.path.sep + folder
-files = sorted(glob.glob(dir + '/[0-9]*.csv'))
-
-calibration = np.loadtxt(
-    dir + os.path.sep + 'calibration.csv', delimiter=',').T
-
+######
 plt.plot(*calibration, 'k.', ls='None', label='Calibration')
 plt.legend()
 plt.show()
 
+#####
 
 subfolders = [f.path.split('/')[-1] for f in os.scandir(dir) if f.is_dir()]
 pos_mm = np.array([float(sf.replace('_', '.')) for sf in subfolders])
@@ -47,12 +54,12 @@ for sf in subfolders:
     signal = []
     for f in files:
         t, v = np.loadtxt(f, delimiter=',').T
-        # cond = v < 0
+        # cond = v < 0      # If Saturation and ringing
         cond = np.full(len(v), True)
-        signal.append(np.sum(np.abs(np.diff(t)[cond[1:]]*v[1:][cond[1:]])))
+        signal.append(np.sum(np.abs(np.diff(t)[cond[1:]]*v[1:][cond[1:]])))  # "Integration"
     sig.append(np.mean(signal))
 
-sig = np.array(sig) / np.max(sig)
+sig = np.array(sig) / np.max(sig)   # Normalize
 pos_mm, sig = np.array(sorted(zip(pos_mm, sig))).T
 
 plt.plot(pos_mm, sig, 'k.')
@@ -63,6 +70,8 @@ plt.show(block=True)
 # file = 'logging/' + folder + '/summary.csv'
 # pos_mm, sig, error = np.loadtxt(file, delimiter=',').T
 
+# Fitting
+
 p0 = [.02, .5, 11.657, .01, .008, 0.1]
 
 plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
@@ -70,7 +79,6 @@ plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)
 plt.text(0.1, 0.95, va='top', s=f'Amp. Lor. :{p0[0]}\nAmp. Gau. :{p0[1]}\nCenter:{p0[2]}\
          \n$\gamma$:{p0[3]}\n$\sigma$:{p0[4]}\nConst.:{p0[5]}', transform=plt.gca().transAxes)
 plt.show()
-
 
 fit, err = curve_fit(model, pos_mm, sig, p0=p0,
                      bounds=([.001, 0.001, p0[2] - .1, .001, .001, p0[-1] - 5],
@@ -88,6 +96,7 @@ width_gamma = fit[3]/1e3/3e8 / 1e-15 * 2
 e_width_gamma = np.sqrt(np.diag(err))[3]/1e3/3e8 / 1e-15
 
 print(f'{width:.2f} +/- {e_width:.2f}')
+
 # Plotting
 fig = plt.figure()
 gs = fig.add_gridspec(2, 1,  height_ratios=(1, 4),
@@ -114,7 +123,6 @@ res_ax.minorticks_on()
 res_ax.set_ylim(-15, 10)
 res_ax.set_ylabel('Residuals')
 ax.set_xlim(-250, 250)
-
 
 plt.setp(res_ax.get_xticklabels(), visible=False)
 fig.tight_layout()

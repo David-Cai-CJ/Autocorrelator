@@ -10,6 +10,18 @@ import matplotlib.pylab as plt
 
 matplotlib.use('TKAgg')
 
+#########
+folder = r'HVAC_morning_smaller_beam'
+n_samples = 1
+
+
+try:
+    os.makedirs(os.path.sep.join(['logging', folder]))
+except FileExistsError:
+    pass
+
+#########
+
 moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
 
 # If it says API already connected, close it from fd in the WARNING message. (Probably better ways...)
@@ -35,7 +47,6 @@ stage = xps.autocorr_stage
 min_move = stage.min_limit
 max_move = stage.max_limit
 
-
 # signal limits for ~100fs pulse
 PEAK_POS_MM = 11.6560
 
@@ -47,8 +58,6 @@ PEAK_POS_MM = 11.6560
 # STEP_SIZE_MM = 1e-4  # 100 nm
 # 0.03 mm per 100 fs
 
-
-# # Second set -- long scan period
 RANGE_MM = 0.040
 STEP_SIZE_MM = 5e-4
 
@@ -56,34 +65,22 @@ STEP_SIZE_MM = 5e-4
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
 MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 
-
-###
+# CALIBRATION
 
 stage.absolute_move(10)
 print(f"Stage moved to {stage.current_position()}")
 
-folder = r'HVAC_morning_smaller_beam'
-n_samples = 1
-
-
-try:
-    os.makedirs(os.path.sep.join(['logging', folder]))
-except FileExistsError:
-    pass
-
-
-########
 measurement = osc.get_data()
 calibration_data = np.array([measurement['time'], measurement['ch2']]).T
 
 np.savetxt(r'./logging' + os.sep + folder + os.path.sep + 'calibration'
            '.csv', calibration_data, delimiter=',')
 
+########
 print("Start Scanning\n\n")
 
 pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
                STEP_SIZE_MM, STEP_SIZE_MM), 4)
-
 
 fig, (ax, ax2) = plt.subplots(2, 1)
 
@@ -128,6 +125,5 @@ for loc in tqdm.tqdm(pos):
     plt.pause(.1)
 
 plt.show(block=True)
-
 
 osc.relinquish_ownership()
