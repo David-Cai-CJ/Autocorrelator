@@ -32,7 +32,7 @@ min_move = stage.min_limit
 max_move = stage.max_limit
 
 
-PEAK_POS_MM = 11.6550
+PEAK_POS_MM = 11.20
 
 STEP_SIZE_MM = 5e-4
 
@@ -55,7 +55,7 @@ for i in np.arange(20):
         dt_data.append(t2-t1)
 
 # print(np.mean(dt_stage) *100)
-
-print(np.mean(dt_data) *100)
+plt.hist(dt_data)
 
 osc.relinquish_ownership()
+plt.show()

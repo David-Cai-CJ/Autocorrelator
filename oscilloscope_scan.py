@@ -11,7 +11,7 @@ import matplotlib.pylab as plt
 matplotlib.use('TKAgg')
 
 #########
-folder = r'HVAC_morning_smaller_beam'
+folder = r'compression_change_Monday'
 n_samples = 1
 
 
@@ -33,14 +33,15 @@ moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
 osc = Oscilloscope(moku_address, force_connect=True)
 # osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
 osc.set_source(2, source='Input2')
-osc.set_acquisition_mode(mode='Normal')
+osc.set_acquisition_mode(mode='Precision')
 osc.set_hysteresis("Absolute", 0.03)
 osc.set_trigger(auto_sensitivity=False, hf_reject=False,
-                noise_reject=False, mode='Normal', level=0.09, source='Input2')
-osc.set_timebase(-.6e-6, 1.e-6)
+                noise_reject=False, mode='Normal', level=0.7, source='Input2')
+osc.set_timebase(-3e-6, 5e-6)
 # https://apis.liquidinstruments.com/reference/oscilloscope/
 xps = XPSController(reset=False)
 
+print("hardwares connected")
 stage = xps.autocorr_stage
 
 # hardware limits
@@ -48,7 +49,7 @@ min_move = stage.min_limit
 max_move = stage.max_limit
 
 # signal limits for ~100fs pulse
-PEAK_POS_MM = 11.6560
+PEAK_POS_MM = 11.625
 
 # RANGE_PS = .5
 # RANGE_MM = abs(stage.delay_to_distance(RANGE_PS))
@@ -58,8 +59,8 @@ PEAK_POS_MM = 11.6560
 # STEP_SIZE_MM = 1e-4  # 100 nm
 # 0.03 mm per 100 fs
 
-RANGE_MM = 0.040
-STEP_SIZE_MM = 5e-4
+RANGE_MM = 0.10
+STEP_SIZE_MM = 2e-3
 
 
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
@@ -90,8 +91,10 @@ e_v_data = []
 for loc in tqdm.tqdm(pos):
     stage.absolute_move(loc)
     prefix = f"{stage.current_position():.4f}".replace(".", "_")
+    print(loc)
 
     Vmax = []
+    
     step_folder = r'./logging'+os.path.sep + folder + \
         os.path.sep + rf'{loc}'.replace('.', '_')
 
@@ -104,6 +107,7 @@ for loc in tqdm.tqdm(pos):
     for n in np.arange(n_samples):
         # Current proportional to Voltage. Take max Vout
         measurement = osc.get_data()
+        print("got data")
         data = np.array([measurement['time'], measurement['ch2']]).T
         np.savetxt(step_folder+os.path.sep +
                    f'{n}' + '.csv', data, delimiter=',')
