@@ -13,7 +13,7 @@ import h5py
 matplotlib.use('TKAgg')
 
 #########
-folder = input("Logging folder name?\t:")
+folder = input("Logging folder name?:\t")
 
 n_samples = int(input("N samples per position:\t"))
 
@@ -22,14 +22,14 @@ path = os.path.sep.join(['logging', folder])
 try:
     os.makedirs(path)
 except FileExistsError:
-    print("Folder already exists. Chooes a different name.")
+    print("Folder already exists. Choose a different name.")
 
-    
-file = h5py.File(path+os.path.sep + 'dataset.hdf5', 'a')
+file_dir = path + os.path.sep + 'data.hdf5'
+
+
 
 #########
-
-moku_address = '[fe80:0000:0000:0000:7269:79ff:feb9:1a40%9]'
+moku_address = '172.25.12.13' 
 
 ## If it says API already connected, close it from fd in the WARNING message. (Probably better ways...)
 # socket.socket().close(404)
@@ -39,7 +39,6 @@ osc = Oscilloscope(moku_address, force_connect=True)
 # osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
 osc.set_source(2, source='Input2')
 osc.set_acquisition_mode(mode='Precision')
-osc.set_hysteresis("Absolute", 0.03)
 osc.set_trigger(auto_sensitivity=False, hf_reject=False,
                 noise_reject=False, mode='Normal', level=0.7, source='Input2')
 osc.set_timebase(-3e-6, 5e-6)
@@ -73,23 +72,25 @@ print("Start Scanning\n\n")
 pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
                STEP_SIZE_MM, STEP_SIZE_MM), 4)
 
-with h5py.File(path + os.path.sep + "dataset.hdf5", 'a') as hf:
-    hf.create_dataset("positions", pos)
+with h5py.File(file_dir, 'a') as hf:
+    hf.create_dataset("positions", data = pos)
 
 ########
 trange = tqdm.tqdm(pos)
 
+
 for loc in trange:    
     stage.absolute_move(loc)
-    trange.set_postfix({'Position':loc})
+    trange.set_postfix({'Position': loc})
 
-    with h5py.File(path + os.path.sep + "dataset.hdf5", 'a') as hf:
-        grp = hf.create_group(f"{loc}")
+    print("\n"+ f"{loc}".replace(".", "_")+" \n")
 
-    
-    for n in np.arange(n_samples):
-        measurement = osc.get_data()
-        data = np.array([measurement['time'], measurement['ch2']]).T
-        grp["n"] = data
+    with h5py.File(file_dir, 'a') as hf:
+        grp = hf.create_group(f"{loc}".replace(".", "_"))
+
+        for n in np.arange(n_samples): 
+            measurement = osc.get_data()
+            data = np.array([measurement['time'], measurement['ch2']])
+            dataset = grp.create_dataset(f'{n}', data=data) 
 
 osc.relinquish_ownership()
