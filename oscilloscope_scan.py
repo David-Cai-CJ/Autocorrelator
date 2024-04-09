@@ -40,8 +40,8 @@ osc = Oscilloscope(moku_address, force_connect=True)
 osc.set_source(2, source='Input2')
 osc.set_acquisition_mode(mode='Precision')
 osc.set_trigger(auto_sensitivity=False, hf_reject=False,
-                noise_reject=False, mode='Normal', level=0.7, source='Input2')
-osc.set_timebase(-3e-6, 5e-6)
+                noise_reject=False, mode='Normal', level=0.3, source='Input2')
+osc.set_timebase(-0.5e-6, 3e-6)
 # https://apis.liquidinstruments.com/reference/oscilloscope/
 
 # reset=False will not reset the stages to factory default locations.
@@ -81,16 +81,17 @@ trange = tqdm.tqdm(pos)
 
 for loc in trange:    
     stage.absolute_move(loc)
-    trange.set_postfix({'Position': loc})
-
-    print("\n"+ f"{loc}".replace(".", "_")+" \n")
+    trange.set_postfix({'Position': f'{loc}'})
 
     with h5py.File(file_dir, 'a') as hf:
         grp = hf.create_group(f"{loc}".replace(".", "_"))
 
         for n in np.arange(n_samples): 
             measurement = osc.get_data()
-            data = np.array([measurement['time'], measurement['ch2']])
-            dataset = grp.create_dataset(f'{n}', data=data) 
+            t = measurement['time']
+            v = measurement['ch2']
+            subgrp = grp.create_group(f'{n}') 
+            subgrp.create_dataset('time', data = t)
+            subgrp.create_dataset('voltage', data =v)
 
 osc.relinquish_ownership()
