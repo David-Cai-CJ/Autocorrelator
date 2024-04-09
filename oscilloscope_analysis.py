@@ -13,8 +13,8 @@ import matplotlib
 matplotlib.use('TKAgg')
 
 ####
-folder = 'compression_change_Monday'
-
+folder = r'ch3_problem_solved'
+print(folder)
 
 dir = 'logging' + os.path.sep + folder
 files = sorted(glob.glob(dir + '/[0-9]*.csv'))
@@ -87,7 +87,7 @@ print((pos_mm[right] - pos_mm[left])/1e3/2.998e8/1e-15*2)
 
 # Fitting
 
-p0 = [2.5, 11.631,0.04, 0.]
+p0 = [2.5, 11.136,0.04, 0.]
 
 # plt.plot(pos_mm, model(pos_mm, *p0), 'r-')
 # plt.plot(pos_mm, sig, 'k.', ls='None', ms=2)
@@ -113,48 +113,69 @@ e_width_gamma = np.sqrt(np.diag(err))[3]/1e3/3e8 / 1e-15
 print(f'{width:.2f} +/- {e_width:.2f}')
 
 # Plotting
-fig = plt.figure()
-gs = fig.add_gridspec(2, 1,  height_ratios=(1, 4),
-                      left=0.1, right=0.9, bottom=0.1, top=0.9,
-                      wspace=0.05, hspace=0)
+# fig = plt.figure()
+# gs = fig.add_gridspec(2, 1,  height_ratios=(1, 4),
+#                       left=0.1, right=0.9, bottom=0.1, top=0.9,
+#                       wspace=0.05, hspace=0)
 
 
-ax = fig.add_subplot(gs[1, 0])
-res_ax = fig.add_subplot(gs[0, 0], sharex=ax)
+# ax = fig.add_subplot(gs[1, 0])
+# res_ax = fig.add_subplot(gs[0, 0], sharex=ax)
 
-ax.plot(t_fs, normed, 'k.', ms=4, markevery=1, label='Data')
+# ax.plot(t_fs, normed, 'k.', ms=4, markevery=1, label='Data')
+# ax.plot(t_fs, model(pos_mm, *fit), c='b', lw=1,  label='Fit')
+# # ax.plot(t_fs, gau(pos_mm, x0, s)*aG + C, '-.',
+# #         c='green', lw=1, alpha=.5,  label='Gaussian')
+# # ax.plot(t_fs, lor(pos_mm, x0, g)*aL + C, '--',
+# #         c='r', lw=1, alpha=.5,   label='Lorentzian')
+# ax.set_xlabel('Delay (fs)')
+# # ax.set_ylabel('Signal (arb. unit)')
+# # ax.legend(loc='center left')
+
+# # res_ax.plot(t_fs, (sig - model(pos_mm, *fit))/sig * 100, 'b-', lw=1)
+# # res_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+# # res_ax.minorticks_on()
+# # res_ax.set_ylim(-15, 10)
+# # res_ax.set_ylabel('Residuals')
+# # # ax.set_xlim(-250, 250)
+
+# ax.axvline(t_fs[left], c='r')
+# ax.axvline(t_fs[right], c='r')
+# ax.axhline(0.5, c='r')
+
+# plt.setp(res_ax.get_xticklabels(), visible=False)
+# fig.tight_layout()
+
+# # text_out = "$\sigma_{\mathrm{auto.}}=$" + f"${width:.2f}\pm{e_width:.2f}$ fs\n" +\
+# #     "$\gamma_{\mathrm{auto.}}=$" + \
+# #     f"${width_gamma:.2f}\pm{e_width_gamma:.2f}$ fs\n"
+# # # "$\mathrm{FWHM}_{\mathrm{source}}=$" + \
+# # # f"${width/np.sqrt(2) * fwhm_factor:.0f}\pm{e_width/np.sqrt(2) *fwhm_factor:.0f}$ fs\n" +\
+
+# # ax.text(.05, .95, s=text_out, transform=ax.transAxes, va='top')
+
+
+# plt.show()
+
+f, ax =  plt.subplots(1,1)
+#ax.set_xlim(-200,200)
+#ax.set_ylim(0.35,1)
+ax.plot(t_fs, normed, 'k.',lw=.5, ms = 3, alpha = .7, zorder= -1, markevery=1, label='Data')
 ax.plot(t_fs, model(pos_mm, *fit), c='b', lw=1,  label='Fit')
-# ax.plot(t_fs, gau(pos_mm, x0, s)*aG + C, '-.',
-#         c='green', lw=1, alpha=.5,  label='Gaussian')
-# ax.plot(t_fs, lor(pos_mm, x0, g)*aL + C, '--',
-#         c='r', lw=1, alpha=.5,   label='Lorentzian')
-ax.set_xlabel('Delay (fs)')
-# ax.set_ylabel('Signal (arb. unit)')
-# ax.legend(loc='center left')
-
-# res_ax.plot(t_fs, (sig - model(pos_mm, *fit))/sig * 100, 'b-', lw=1)
-# res_ax.yaxis.set_major_formatter(mtick.PercentFormatter())
-# res_ax.minorticks_on()
-# res_ax.set_ylim(-15, 10)
-# res_ax.set_ylabel('Residuals')
-# # ax.set_xlim(-250, 250)
-
+ax.plot([],[], lw=1, c="b", label=f"FWHM={width*fwhm_factor:.2f} fs")
 ax.axvline(t_fs[left], c='r')
 ax.axvline(t_fs[right], c='r')
-ax.axhline(0.5, c='r')
+ax.axhline(0.5, c='r', label=f"FWHM={(pos_mm[right] - pos_mm[left])/1e3/2.998e8/1e-15*2:.2f} fs")
 
-plt.setp(res_ax.get_xticklabels(), visible=False)
-fig.tight_layout()
+np.savetxt("times.txt",t_fs)
+np.savetxt("intensities.txt", normed)
 
-# text_out = "$\sigma_{\mathrm{auto.}}=$" + f"${width:.2f}\pm{e_width:.2f}$ fs\n" +\
-#     "$\gamma_{\mathrm{auto.}}=$" + \
-#     f"${width_gamma:.2f}\pm{e_width_gamma:.2f}$ fs\n"
-# # "$\mathrm{FWHM}_{\mathrm{source}}=$" + \
-# # f"${width/np.sqrt(2) * fwhm_factor:.0f}\pm{e_width/np.sqrt(2) *fwhm_factor:.0f}$ fs\n" +\
-
-# ax.text(.05, .95, s=text_out, transform=ax.transAxes, va='top')
+ax.set_xlabel("Delay [fs]")
+ax.legend()
+f.tight_layout()
 
 print('figsaved')
-
 plt.show()
+
+f.savefig("logging//"+folder+"//trace.png")
 
