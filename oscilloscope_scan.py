@@ -11,7 +11,7 @@ import matplotlib.pylab as plt
 matplotlib.use('TKAgg')
 
 #########
-folder = r'ch3_problem_solved'
+folder = r'test_osc'
 print(folder)
 
 n_samples = 1
@@ -37,7 +37,7 @@ osc = Oscilloscope(moku_address, force_connect=True)
 osc.set_source(2, source='Input2')
 osc.set_acquisition_mode(mode='Precision')
 osc.set_trigger(auto_sensitivity=False, hf_reject=False,
-                noise_reject=False, mode='Normal', level=0.50, source='Input2')
+                noise_reject=False, mode='Normal', level=0.30, source='Input2')
 osc.set_timebase(-0.5e-6, 2e-6)
 # https://apis.liquidinstruments.com/reference/oscilloscope/
 xps = XPSController(reset=False)
@@ -52,8 +52,8 @@ max_move = stage.max_limit
 # signal limits for ~100fs pulse
 PEAK_POS_MM = 11.136
 
-RANGE_MM = 0.1 # 0.03 mm per 100 fs
-STEP_SIZE_MM = 0.5e-3 # do range divide by 40 or something
+RANGE_MM = 0.06 # 0.03 mm per 100 fs
+STEP_SIZE_MM = 1e-3 # do range divide by 40 or something
 
 
 MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)

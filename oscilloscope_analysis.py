@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use('TKAgg')
 
 ####
-folder = r'ch3_problem_solved'
+folder = r'test_osc'
 print(folder)
 
 dir = 'logging' + os.path.sep + folder
