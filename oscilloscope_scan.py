@@ -56,7 +56,7 @@ max_move = stage.max_limit
 
 # signal limits for ~100fs pulse
 
-PEAK_POS_MM = 11.625
+PEAK_POS_MM = 11.136
 
 # 0.03 mm per 100 fs
 RANGE_MM = 0.10
@@ -106,6 +106,8 @@ for loc in trange:
     ax.plot(pos[:len(v_arr)], v_arr)
     plt.pause(.1)
 
+
+stage.absolute_move(PEAK_POS_MM + 5*RANGE_MM)
 osc.relinquish_ownership()
 
 plt.show(block=True)
