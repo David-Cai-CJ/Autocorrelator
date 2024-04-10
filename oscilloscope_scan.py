@@ -95,9 +95,10 @@ for loc in trange:
         for n in np.arange(n_samples): 
             measurement = osc.get_data()
             t = measurement['time']
-            v = measurement['voltage']
+            v = measurement['ch2']
             subgrp = grp.create_group(f'{n}') 
             subgrp.create_dataset('time', data = t)
+            # renaming to 'voltage' which makes more sense
             subgrp.create_dataset('voltage', data =v)
             
             v_loc[n] = np.sum(v)
