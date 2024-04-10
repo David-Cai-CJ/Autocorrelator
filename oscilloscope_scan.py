@@ -56,7 +56,7 @@ max_move = stage.max_limit
 
 # signal limits for ~100fs pulse
 
-PEAK_POS_MM = 11.625
+PEAK_POS_MM = 11.136
 
 # 0.03 mm per 100 fs
 RANGE_MM = 0.10
@@ -94,4 +94,6 @@ for loc in trange:
             subgrp.create_dataset('time', data = t)
             subgrp.create_dataset('voltage', data =v)
 
+
+stage.absolute_move(PEAK_POS_MM + 5*RANGE_MM)
 osc.relinquish_ownership()
