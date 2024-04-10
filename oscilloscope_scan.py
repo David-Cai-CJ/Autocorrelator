@@ -56,11 +56,7 @@ file_dir = path + os.path.sep + 'data.hdf5'
 
 # # signal limits for ~100fs pulse
 
-<<<<<<< Updated upstream
 PEAK_POS_MM = 11.136
-=======
-# PEAK_POS_MM = 11.625
->>>>>>> Stashed changes
 
 # # 0.03 mm per 100 fs
 # RANGE_MM = 0.10
@@ -110,13 +106,9 @@ PEAK_POS_MM = 11.136
 #     ax.plot(pos[:len(v_arr)], v_arr)
 #     plt.pause(.1)
 
-<<<<<<< Updated upstream
 
 stage.absolute_move(PEAK_POS_MM + 5*RANGE_MM)
 osc.relinquish_ownership()
-=======
-# osc.relinquish_ownership()
->>>>>>> Stashed changes
 
 plt.show(block=True)
 
