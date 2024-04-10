@@ -36,6 +36,7 @@ moku_address = '172.25.12.13'
 # socket.socket().close(1192)
 
 osc = Oscilloscope(moku_address, force_connect=True)
+print("Moku connected.")
 # osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
 osc.set_source(2, source='Input2')
 osc.set_acquisition_mode(mode='Precision')
@@ -46,8 +47,7 @@ osc.set_timebase(-0.5e-6, 3e-6)
 
 # reset=False will not reset the stages to factory default locations.
 xps = XPSController(reset=False)
-
-print("Hardwares connected")
+print("XPS connected. \n")
 stage = xps.autocorr_stage
 
 # hardware limits
@@ -81,6 +81,10 @@ trange = tqdm.tqdm(pos)
 
 fig, ax = plt.subplots(1, 1)
 
+ax.autoscale(enable =False, axis = 'x')
+ax.autoscale(enable =True, axis = 'y')
+ax.set_xlim([np.min(pos) - 2 * STEP_SIZE_MM, np.max(pos) +  2 * STEP_SIZE_MM])
+
 v_arr = []
 
 for loc in trange:    
@@ -103,9 +107,12 @@ for loc in trange:
             
             v_loc[n] = np.sum(v)
     v_arr.append(np.mean(v_loc))
-
-    ax.plot(pos[:len(v_arr)], v_arr)
-    plt.pause(.1)
+    try:
+        scatter.remove()
+    except NameError:
+        pass
+    scatter = ax.scatter(pos[:len(v_arr)], v_arr, marker = '.', color= 'k')
+    plt.pause(0.001)
 
 
 stage.absolute_move(PEAK_POS_MM + 5*RANGE_MM)
