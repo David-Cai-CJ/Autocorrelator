@@ -138,39 +138,43 @@ model = lambda x,A,x0,s,C: A*gau(x,x0,s) + C
 
 p0 = [2.5, 11.136,0.04, 0.]
 
-fit, err = curve_fit( model, pos_mm, v_arr, p0=p0,
+fit, _ = curve_fit( model, pos_mm, v_arr, p0=p0,
                      bounds=([.001, p0[1] - .1,  .001, p0[-1] - 0.5],
                              [40, p0[1] + .1,  .07, p0[-1] + 1]))
 
 
+
+A, x0, s, C = fit
+
 ## conversions
-t_fs = (pos_mm - fit[1])/1e3/2.998e8/1e-15*2
+t_fs = (pos_mm - x0)/1e3/2.998e8/1e-15*2
 
 fwhm_factor = 2.355
-width = fit[-2]/1e3/3e8 / 1e-15 * 2
-e_width = np.sqrt(np.diag(err))[-2]/1e3/3e8 / 1e-15
+width = s /1e3/3e8 / 1e-15 * 2
 
 ## plotting and saving
 
-print(f'{width:.2f} +/- {e_width:.2f}')
+print('sigma is'.rjust(15) + f'{width:.2f}')
 
 # Plotting
-fig = plt.figure()
 
-ax = fig.add_subplot(1,1)
 
-ax.plot(t_fs, v_arr, 'k.', ms=4, markevery=1, label='Data')
+f, ax =  plt.subplots(1,1)
+ax.plot(t_fs, v_arr, 'k.',lw=.5, ms = 3, alpha = .7, zorder= -1, markevery=1, label='Data')
 ax.plot(t_fs, model(pos_mm, *fit), c='b', lw=1,  label='Fit')
-ax.set_xlabel('Delay (fs)')
+ax.plot([],[], lw=1, c="b", label=f"FWHM={width*fwhm_factor:.2f} fs")
+ax.axvline(t_fs[left], c='r')
+ax.axvline(t_fs[right], c='r')
+ax.axhline(0.5, c='r', label=f"FWHM={(pos_mm[right] - pos_mm[left])/1e3/2.998e8/1e-15*2:.2f} fs")
 
-fig.tight_layout()
+np.savetxt("times.txt",t_fs)
+np.savetxt("intensities.txt", normed)
 
-text_out = "$\sigma_{\mathrm{auto.}}=$" + f"${width:.2f}\pm{e_width:.2f}$ fs\n"
-# "$\mathrm{FWHM}_{\mathrm{source}}=$" + \
-# f"${width/np.sqrt(2) * fwhm_factor:.0f}\pm{e_width/np.sqrt(2) *fwhm_factor:.0f}$ fs\n" +\
-
-ax.text(.05, .95, s=text_out, transform=ax.transAxes, va='top')
+ax.set_xlabel("Delay [fs]")
+ax.legend()
+f.tight_layout()
 
 print('figsaved')
-
 plt.show()
+
+f.savefig("logging//"+folder+"//trace.png")
