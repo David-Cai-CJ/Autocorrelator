@@ -56,19 +56,19 @@ max_move = stage.max_limit
 
 # signal limits for ~100fs pulse
 
-PEAK_POS_MM = 11.136
+PEAK_pos = 11.136
 
 # 0.03 mm per 100 fs
 RANGE_MM = 0.10
 STEP_SIZE_MM = 2e-3
 
-MAX_POS_MM = round(PEAK_POS_MM + RANGE_MM, 4)
-MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
+MAX_pos = round(PEAK_pos + RANGE_MM, 4)
+MIN_pos = round(PEAK_pos - RANGE_MM, 4)
 
 
 ########
 
-pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
+pos = np.round(np.arange(MIN_pos, MAX_pos +
                STEP_SIZE_MM, STEP_SIZE_MM), 4)
     
 ####### create matrices for holding time/voltage data
@@ -78,7 +78,6 @@ t_matrix = np.zeros((len(pos), n_samples, scan_pts))
 v_matrix = np.zeros((len(pos), n_samples, scan_pts))
 
 ########
-trange = tqdm.tqdm(pos)
 
 fig, ax = plt.subplots(1, 1)
 
@@ -88,9 +87,10 @@ ax.set_xlim([np.min(pos) - 2 * STEP_SIZE_MM, np.max(pos) +  2 * STEP_SIZE_MM])
 
 
 ######
-print("Start Scanning\n\n")
 
 v_arr = []
+
+trange = tqdm.tqdm(pos)
 
 for i, loc in enumerate(trange):    
     stage.absolute_move(loc)
@@ -109,14 +109,14 @@ for i, loc in enumerate(trange):
         scatter.remove()
     except NameError:
         pass
+
     scatter = ax.scatter(pos[:len(v_arr)], v_arr, marker = '.', color= 'k')
     plt.pause(0.001)
 
 
-stage.absolute_move(PEAK_POS_MM + 5*RANGE_MM)
+stage.absolute_move(PEAK_pos + 5*RANGE_MM)
 osc.relinquish_ownership()
 
-plt.show(block=True)
 
 # exporting traces as matrices 
 with h5py.File(file_dir, 'a') as hf:
@@ -127,10 +127,8 @@ with h5py.File(file_dir, 'a') as hf:
 
 ## Generate an FWHM fit with an image saved to the data folder.
 
-hf = h5py.File(file_dir, 'r')
-pos_mm = np.array(hf['positions'])
 
-signal = np.sum(np.diff(t_matrix) * v_matrix[:-1], axis= (1,2))
+signal = np.sum(np.diff(t_matrix, axis= 2) * v_matrix[..., :-1], axis= (1,2))
 
 left_found = False
 right_found = False
@@ -146,7 +144,7 @@ for i, val in enumerate(normed - 0.5):
         right_found = True
 
 # print(left, right)
-print("FWHM quick: ".ljust(15) +  f"{(pos_mm[right] - pos_mm[left])/1e3/2.998e8/1e-15*2:.2f} fs")
+print("FWHM quick: ".ljust(15) +  f"{(pos[right] - pos[left])/1e3/2.998e8/1e-15*2:.2f} fs")
 
 # fitting
 def gau(x, x0, s):
@@ -156,7 +154,7 @@ model = lambda x,A,x0,s,C: A*gau(x,x0,s) + C
 
 p0 = [2.5, 11.136,0.04, 0.]
 
-fit, _ = curve_fit( model, pos_mm, normed, p0=p0,
+fit, _ = curve_fit( model, pos, normed, p0=p0,
                      bounds=([.001, p0[1] - .1,  .001, p0[-1] - 0.5],
                              [40, p0[1] + .1,  .07, p0[-1] + 1]))
 
@@ -165,7 +163,7 @@ A, x0, s, C = fit
 
 
 ## conversions
-t_fs = (pos_mm - x0)/1e3/2.998e8/1e-15*2
+t_fs = (pos - x0)/1e3/2.998e8/1e-15*2
 
 fwhm_factor = 2.355
 width = s /1e3/3e8 / 1e-15 * 2
@@ -179,15 +177,21 @@ print('FWHM fit: '.ljust(15) + f'{fwhm_factor * width:.2f} fs')
 
 f, ax =  plt.subplots(1,1)
 ax.plot(t_fs, normed, 'k.',lw=.5, ms = 3, alpha = .7, zorder= -1, markevery=1, label='Data')
-ax.plot(t_fs, model(pos_mm, *fit), c='b', lw=1, )
+ax.plot(t_fs, model(pos, *fit), c='b', lw=1, )
 ax.plot([],[], lw=1, c="b", label=f"FWHM={width*fwhm_factor:.2f} fs")
 ax.axvline(t_fs[left], c='r', ls = '--', lw =.7, alpha = .7)
 ax.axvline(t_fs[right], c='r',  ls = '--', lw =.7, alpha = .7)
 ax.axhline(0.5, c='r',  ls = '--', lw =.7, alpha = .7, 
-           label=f"FWHM={(pos_mm[right] - pos_mm[left])/1e3/2.998e8/1e-15*2:.2f} fs")
+           label=f"FWHM={(pos[right] - pos[left])/1e3/2.998e8/1e-15*2:.2f} fs")
 
 np.savetxt(path + os.path.sep + "times.txt" , t_fs)
 np.savetxt(path + os.path.sep + "normed_intensity.txt", normed)
+
+
+with h5py.File(file_dir, 'a') as hf:
+    hf.create_dataset('delay', data = t_fs)
+    hf.create_dataset('intensity', data = normed)
+
 
 ax.set_xlabel("Delay [fs]")
 ax.set_ylabel("Relative Intensity")
