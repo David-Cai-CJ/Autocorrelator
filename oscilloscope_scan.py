@@ -8,7 +8,7 @@ import matplotlib
 import csv
 import matplotlib.pylab as plt
 import h5py
-
+import argparse
 from scipy.optimize import curve_fit
 
 
@@ -67,17 +67,18 @@ MIN_POS_MM = round(PEAK_POS_MM - RANGE_MM, 4)
 
 
 ########
-print("Start Scanning\n\n")
 
 pos = np.round(np.arange(MIN_POS_MM, MAX_POS_MM +
                STEP_SIZE_MM, STEP_SIZE_MM), 4)
+    
+####### create matrices for holding time/voltage data
+scan_pts = len(osc.get_data()['time'])
 
-with h5py.File(file_dir, 'a') as hf:
-    hf.create_dataset("positions", data = pos)
+t_matrix = np.zeros((len(pos), n_samples, scan_pts))
+v_matrix = np.zeros((len(pos), n_samples, scan_pts))
 
 ########
 trange = tqdm.tqdm(pos)
-
 
 fig, ax = plt.subplots(1, 1)
 
@@ -85,28 +86,25 @@ ax.autoscale(enable =False, axis = 'x')
 ax.autoscale(enable =True, axis = 'y')
 ax.set_xlim([np.min(pos) - 2 * STEP_SIZE_MM, np.max(pos) +  2 * STEP_SIZE_MM])
 
+
+######
+print("Start Scanning\n\n")
+
 v_arr = []
 
-for loc in trange:    
+for i, loc in enumerate(trange):    
     stage.absolute_move(loc)
     trange.set_postfix({'Position': f'{loc}'})
 
-    v_loc = np.zeros(n_samples)
+    for n in np.arange(n_samples): 
+        measurement = osc.get_data()
+        t = measurement['time']
+        v = measurement['ch2']
+        t_matrix[i, n] = t
+        v_matrix[i, n] = v
+        
+    v_arr.append(np.mean(v_matrix[i]))
 
-    with h5py.File(file_dir, 'a') as hf:
-        grp = hf.create_group(f"{loc}".replace(".", "_"))
-
-        for n in np.arange(n_samples): 
-            measurement = osc.get_data()
-            t = measurement['time']
-            v = measurement['ch2']
-            subgrp = grp.create_group(f'{n}') 
-            subgrp.create_dataset('time', data = t)
-            # renaming to 'voltage' which makes more sense
-            subgrp.create_dataset('voltage', data =v)
-            
-            v_loc[n] = np.sum(v)
-    v_arr.append(np.mean(v_loc))
     try:
         scatter.remove()
     except NameError:
@@ -120,35 +118,23 @@ osc.relinquish_ownership()
 
 plt.show(block=True)
 
+# exporting traces as matrices 
+with h5py.File(file_dir, 'a') as hf:
+    trace_grp = hf.create_group("trace")
+    trace_grp.create_dataset("positions", data = pos)
+    trace_grp.create_dataset("time_trace", data = t_matrix)
+    trace_grp.create_dataset("voltage_trace", data = v_matrix)
+
 ## Generate an FWHM fit with an image saved to the data folder.
 
 hf = h5py.File(file_dir, 'r')
 pos_mm = np.array(hf['positions'])
-v_arr = []
 
-for p in pos_mm:
-    subgrp_key = str(p).replace(".", "_")
-    subgrp = hf[subgrp_key]
-    v_loc = []
-    for key in subgrp.keys():
-        # can be better integrated with the time stamps
-    
-        t=np.array(subgrp[key]['time'])
-        v=np.array(subgrp[key]['voltage'])
-        cond = np.full(len(v), True)
-        v_loc.append(np.sum(np.abs(np.diff(t)[cond[1:]]*v[1:][cond[1:]]))) 
-    v_arr.append(np.mean(v_loc))
-
-
-v_arr = np.array(v_arr) / np.max(v_arr)   # Normalize
-
-
-
-# Quick and dirty...
+signal = np.sum(np.diff(t_matrix) * v_matrix[:-1], axis= (1,2))
 
 left_found = False
 right_found = False
-normed = v_arr - np.min(v_arr)
+normed = signal - np.min(signal)
 normed /= np.max(normed)
 
 for i, val in enumerate(normed - 0.5):
