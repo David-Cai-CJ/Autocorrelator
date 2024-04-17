@@ -19,32 +19,24 @@ matplotlib.use("TKAgg")
 
 
 ##### Alignment Variables.
-PEAK_POS = 11.136  # mm
+PEAK_POS = 11.140  # mm
 # 0.03 mm per 100 fs
-RANGE = 0.10
+RANGE = 0.15
 STEP_SIZE = 2e-3
 #########
 
 parser = argparse.ArgumentParser()
-parser.parse_args()
 
 parser.add_argument(
     "file_directory",
     help="Absolute or relative path to the .hdf5 and .pdf files.",
     type=str,
 )
-parser.add_argument(
-    "--pdf",
-    help="The program will only generate a .hdf5 file.",
-    default=True,
-    type=bool,
-)
-parser.add_argument(
-    "--liveview",
-    help="If set to true, program will not plot as it scans. Speeds up.",
-    default=True,
-    type=bool,
-)
+# parser.add_argument('--pdf', default= True, action='store_true', help = 'store the scan in a pdf if set to true.')
+parser.add_argument('--no-pdf', dest='pdf', action='store_false')
+# parser.add_argument('--liveview', default = True, action='store_true')
+
+parser.add_argument('--no-liveview', dest='liveview', action='store_false')
 parser.add_argument("--num_samples", default=1, type=int)
 parser.add_argument(
     "--peak_position",
@@ -64,8 +56,14 @@ parser.add_argument(
     default=STEP_SIZE,
     type=float,
 )
-args = parser.parse_args()
+parser.add_argument(
+    "--n_samples",
+    help="Spacing between scan steps. Unit in milimeter.",
+    default=1,
+    type=int,
+)
 
+args = parser.parse_args()
 ####### Extracting from argparser
 
 arg_path = Path(args.file_directory)
@@ -81,7 +79,10 @@ moku_address = "172.25.12.13"
 # socket.socket().close(404)
 # socket.socket().close(1192)
 
-osc = Oscilloscope(moku_address) # force_connect=True  ?
+try: 
+    osc = Oscilloscope(moku_address)
+except Exception:
+    osc = Oscilloscope(moku_address, force_connect = True)
 # osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
 osc.set_source(2, source="Input2")
 osc.set_acquisition_mode(mode="Precision")
