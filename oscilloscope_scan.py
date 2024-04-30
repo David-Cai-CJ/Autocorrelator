@@ -19,10 +19,10 @@ matplotlib.use("TKAgg")
 
 
 ##### Alignment Variables.
-PEAK_POS = 11.140  # mm
+PEAK_POS = 11.213  # mm
 # 0.03 mm per 100 fs
-RANGE = 0.15
-STEP_SIZE = 2e-3
+RANGE = 0.1
+STEP_SIZE = 0.25e-3
 #########
 
 parser = argparse.ArgumentParser()
@@ -79,10 +79,8 @@ moku_address = "172.25.12.13"
 # socket.socket().close(404)
 # socket.socket().close(1192)
 
-try: 
-    osc = Oscilloscope(moku_address)
-except Exception:
-    osc = Oscilloscope(moku_address, force_connect = True)
+osc = Oscilloscope(moku_address, force_connect = True)
+
 # osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
 osc.set_source(2, source="Input2")
 osc.set_acquisition_mode(mode="Precision")
