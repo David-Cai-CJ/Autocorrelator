@@ -174,12 +174,12 @@ right_found = False
 normed = signal - np.min(signal)
 normed /= np.max(normed)
 
-for i, val in enumerate(normed - 0.5):
+for i, val in enumerate(normed[1:] - 0.5):
     if val > 0 and not left_found:
-        left = i
+        left = i + 1
         left_found = True
     if left_found and val < 0 and not right_found:
-        right = i
+        right = i + 1
         right_found = True
 
 # print(
