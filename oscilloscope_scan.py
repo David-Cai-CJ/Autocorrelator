@@ -142,6 +142,7 @@ min_pos = round(peak_position - range, 4)
 pos = np.round(np.arange(min_pos, max_pos + step_size,step_size), 4)
 
 ####### create matrices for holding time/voltage data
+#stage.absolute_move(peak_position)
 print("getting trace dim... ", end="")
 scan_pts = len(osc.get_data()["time"])
 print("done")
