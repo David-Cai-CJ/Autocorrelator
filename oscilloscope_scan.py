@@ -1,5 +1,5 @@
-from moku.instruments import Oscilloscope
 from uedinst.delay_stage import XPSController
+from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
 import os
 from os.path import join as pj
 import numpy as np
@@ -59,32 +59,23 @@ parser.add_argument(
     default=STEP_SIZE,
     type=float,
 )
-parser.add_argument(
-    "-t",
-    "--trigger_level",
-    help="Trigger level. Unit in volt.",
-    default=TRIGGER_LEVEL,
-    type=float,
-)
+
 parser.add_argument(
     "-n",
     "--num_samples",
-    help="Spacing between scan steps. Unit in milimeter.",
+    help="number of images taken at one stage position",
     default=1,
     type=int,
 )
+
 parser.add_argument(
-    "--rolling_mode",
-    help="Don't trigger on peak of PD signal, but average on the DC voltage",
-    default=False,
-    action="store_true",
+    "-e",
+    "--exposure_time",
+    help="set exposure time in ms",
+    default=10,
+    type=float
 )
-parser.add_argument(
-    "--rolling_window",
-    help="Only if rolling mode is enabled. Set time window in seconds. Minimum is 1 second.",
-    default=1,
-    type=float,
-)
+
 
 args = parser.parse_args()
 ####### Extracting from argparser
@@ -99,6 +90,7 @@ peak_position = args.peak_position
 range = args.range
 step_size = args.step_size
 num_samples = args.num_samples
+exposure_time = args.exposure_time*1e3
 
 # #########
 moku_address = "172.25.12.13"
@@ -107,29 +99,19 @@ moku_address = "172.25.12.13"
 # socket.socket().close(404)
 # socket.socket().close(1192)
 
-print("connecting to moku... ", end="")
-osc = Oscilloscope(moku_address, force_connect = True)
+print("connecting to camera... ", end="")
+tlsdk =  TLCameraSDK()
+available_cameras = tlsdk.discover_available_cameras()
+camera = tlskd.open_camera(available_cameras[0])
+camera.operation_mode = "SOFTWARE_TRIGGERED"
+camera.frames_per_trigger_zero_for_unlimited = 1 #get one image per trigger
+camera.exposure_time_us = exposure_time
+img_width, img_height = camera.image_width_pixels, camera.image_height.pixels
 print("done")
 
-# osc.osc_measurement(-1e-6, 3e-6,"Input2",'Rising', 0.04)
-osc.set_source(2, source="Input2")
-osc.set_acquisition_mode(mode="Precision")
 
-if args.rolling_mode:
-    osc.set_frontend(2,"1MOhm","DC","10Vpp")
-    osc.enable_rollmode(roll=True)
-    osc.set_timebase(-args.rolling_window, 0)
-else:        
-    osc.set_trigger(
-        auto_sensitivity=False,
-        hf_reject=False,
-        noise_reject=False,
-        mode="Normal",
-        level=args.trigger_level,
-        source="Input2",
-    )
-    osc.set_timebase(-0.1e-6, 2e-6)
-# https://apis.liquidinstruments.com/reference/oscilloscope/
+# https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam
+# https://github.com/Thorlabs/Camera_Examples/blob/main/Python/grab_single_frame.py
 
 # reset=False will not reset the stages to factory default locations.
 print("connecting to xps... ", end="")
@@ -150,12 +132,8 @@ pos = np.round(np.arange(min_pos, max_pos + step_size,step_size), 4)
 
 ####### create matrices for holding time/voltage data
 #stage.absolute_move(peak_position)
-print("getting trace dim... ", end="")
-scan_pts = len(osc.get_data()["time"])
-print("done")
 
-t_matrix = np.zeros((len(pos), num_samples, scan_pts))
-v_matrix = np.zeros((len(pos), num_samples, scan_pts))
+images = np.zeros((len(pos), img_height, img_width))
 
 ########
 if args.liveview:
@@ -176,16 +154,26 @@ for i, loc in enumerate(trange):
     stage._wait_end_of_move()
     trange.set_postfix({"Position": f"{loc:.3f}"})
 
+    mean_image_array = []
     for n in np.arange(args.num_samples):
-        if args.rolling_mode:
-            time.sleep(args.rolling_window)
+
+        # camera measurement protocol: arm, issue trigger, get current frame, save image, disarm camera
+        camera.arm(2) #it is unclear what the argument does, but 2 works... 
+        camera.issue_software_trigger()
+        current_frame = camera.get_pending_frame_or_null()
+
+        temp_image = np.copy(current_frame.image_buffer)
+        mean_image_array.append(temp_image)
+        camera.disarm()
+
         measurement = osc.get_data()
         t = measurement["time"]
         v = measurement["ch2"]
         t_matrix[i, n] = t
         v_matrix[i, n] = v
 
-    v_arr.append(np.nanmean(v_matrix[i]))
+    images[i, ...] = np.nanmean(np.array(temp_image), axis=0)
+    v_arr.append(np.nanmean(images[i]))
 
 
     if args.liveview:
@@ -196,25 +184,30 @@ for i, loc in enumerate(trange):
         scatter = ax.scatter(pos[: len(v_arr)], v_arr, marker=".", color="k")
         plt.pause(0.001)
 
-#### exporting traces as matrices
+
+
+#### exporting data to hdf5
+t_fs = (pos - args.peak_position) / 1e3 / 2.998e8 / 1e-15 * 2
+
+
 with h5py.File(pj(arg_path.parent, arg_path.stem + ".hdf5"), "a") as hf:
     hf.create_dataset("scan_time", data = datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
-    trace_grp = hf.create_group("trace")
+    hf.create_dataset("delay", data=t_fs)
+    hf.create_dataset("intensity", data=np.array(v_arr))  
+    trace_grp = hf.create_group("images")
     trace_grp.create_dataset("positions", data=pos)
-    trace_grp.create_dataset("time_trace", data=t_matrix)
-    trace_grp.create_dataset("voltage_trace", data=v_matrix)
+    trace_grp.create_dataset("images", data=images)
 
 
 stage.absolute_move(args.peak_position) # move stage back to max pos
-
-osc.relinquish_ownership()
+### close camera and TL-SDK
+camera.dispose()
+tlsdk.dispose()
 
 ## Generate an FWHM fit with an image saved to the data folder.
 
-if args.rolling_mode:
-    signal = v_arr
-else:
-    signal = np.sum(np.diff(t_matrix, axis=2) * v_matrix[..., :-1], axis=(1, 2))
+
+signal = v_arr
 
 left_found = False
 right_found = False
@@ -260,9 +253,6 @@ p0 = [2.5, args.peak_position, 0.04, 0.0]
 
 # A, x0, s, C = fit
 
-# ## conversions
-# t_fs = (pos - x0) / 1e3 / 2.998e8 / 1e-15 * 2
-t_fs = (pos - args.peak_position) / 1e3 / 2.998e8 / 1e-15 * 2
 
 model = GaussianModel() + ConstantModel()
 params = model.make_params(amplitude=240, center=0, sigma=100, c=0)
@@ -271,10 +261,6 @@ print(result.fit_report())
 
 # fwhm_factor = 2.355
 # width = s / 1e3 / 3e8 / 1e-15 * 2
-
-with h5py.File(pj(arg_path.parent, arg_path.stem + ".hdf5"), "a") as hf:
-    hf.create_dataset("delay", data=t_fs)
-    hf.create_dataset("intensity", data=normed)
 
 ## plotting and saving
 
