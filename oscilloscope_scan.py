@@ -13,7 +13,7 @@ import argparse
 from lmfit.models import GaussianModel, ConstantModel
 from pathlib import Path
 from datetime import datetime
-
+import time
 
 matplotlib.use("TKAgg")
 
@@ -79,6 +79,12 @@ parser.add_argument(
     default=False,
     action="store_true",
 )
+parser.add_argument(
+    "--rolling_window",
+    help="Only if rolling mode is enabled. Set time window in seconds. Minimum is 1 second.",
+    default=1,
+    type=float,
+)
 
 args = parser.parse_args()
 ####### Extracting from argparser
@@ -110,8 +116,9 @@ osc.set_source(2, source="Input2")
 osc.set_acquisition_mode(mode="Precision")
 
 if args.rolling_mode:
-    osc.set_timebase(-0.5 , 0.5)
+    osc.set_frontend(2,"1MOhm","DC","10Vpp")
     osc.enable_rollmode(roll=True)
+    osc.set_timebase(-args.rolling_window, 0)
 else:        
     osc.set_trigger(
         auto_sensitivity=False,
@@ -170,6 +177,8 @@ for i, loc in enumerate(trange):
     trange.set_postfix({"Position": f"{loc:.3f}"})
 
     for n in np.arange(args.num_samples):
+        if args.rolling_mode:
+            time.sleep(args.rolling_window)
         measurement = osc.get_data()
         t = measurement["time"]
         v = measurement["ch2"]
@@ -187,11 +196,6 @@ for i, loc in enumerate(trange):
         scatter = ax.scatter(pos[: len(v_arr)], v_arr, marker=".", color="k")
         plt.pause(0.001)
 
-
-stage.absolute_move(args.peak_position) # move stage back to max pos
-
-osc.relinquish_ownership()
-
 #### exporting traces as matrices
 with h5py.File(pj(arg_path.parent, arg_path.stem + ".hdf5"), "a") as hf:
     hf.create_dataset("scan_time", data = datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
@@ -199,6 +203,11 @@ with h5py.File(pj(arg_path.parent, arg_path.stem + ".hdf5"), "a") as hf:
     trace_grp.create_dataset("positions", data=pos)
     trace_grp.create_dataset("time_trace", data=t_matrix)
     trace_grp.create_dataset("voltage_trace", data=v_matrix)
+
+
+stage.absolute_move(args.peak_position) # move stage back to max pos
+
+osc.relinquish_ownership()
 
 ## Generate an FWHM fit with an image saved to the data folder.
 
