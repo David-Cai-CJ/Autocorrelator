@@ -100,13 +100,19 @@ moku_address = "172.25.12.13"
 # socket.socket().close(1192)
 
 print("connecting to camera... ", end="")
-tlsdk =  TLCameraSDK()
-available_cameras = tlsdk.discover_available_cameras()
-camera = tlskd.open_camera(available_cameras[0])
-camera.operation_mode = "SOFTWARE_TRIGGERED"
-camera.frames_per_trigger_zero_for_unlimited = 1 #get one image per trigger
-camera.exposure_time_us = exposure_time
-img_width, img_height = camera.image_width_pixels, camera.image_height.pixels
+def connect_camera():
+    tlsdk =  TLCameraSDK()
+    available_cameras = tlsdk.discover_available_cameras()
+    camera = tlsdk.open_camera(available_cameras[0])
+    camera.operation_mode = 0
+    camera.frames_per_trigger_zero_for_unlimited = 0 #get one image per trigger
+    camera.image_poll_timeout_ms = 1000 # added as safety to actually catch image from camera
+    camera.exposure_time_us = int(exposure_time)
+    return tlsdk, camera
+tlsdk, camera = connect_camera()
+img_width, img_height = camera.image_width_pixels, camera.image_height_pixels
+print(img_width, img_height)
+
 print("done")
 
 
@@ -148,42 +154,53 @@ if args.liveview:
 v_arr = []
 
 trange = tqdm.tqdm(pos)
+camera.arm(2) #it is unclear what the argument does, but 2 works... 
 
 for i, loc in enumerate(trange):
-    stage.absolute_move(loc)
-    stage._wait_end_of_move()
+    # stage.absolute_move(loc)
+    # stage._wait_end_of_move()
     trange.set_postfix({"Position": f"{loc:.3f}"})
 
     mean_image_array = []
     for n in np.arange(args.num_samples):
 
         # camera measurement protocol: arm, issue trigger, get current frame, save image, disarm camera
-        camera.arm(2) #it is unclear what the argument does, but 2 works... 
+
         camera.issue_software_trigger()
+
+        while camera.get_pending_frame_or_null() is None:
+            camera.disarm()
+            camera.dispose()
+            tlsdk.dispose()
+
+            print("reconnecting...", end="")
+            tlsdk, camera = connect_camera()
+            print("done")
+            time.sleep(0.437)    
+            camera.arm(2)
+            camera.issue_software_trigger()
+
         current_frame = camera.get_pending_frame_or_null()
-
-        temp_image = np.copy(current_frame.image_buffer)
+        if current_frame is not None:
+            temp_image = np.copy(current_frame.image_buffer)
+            mean_image_array.append(temp_image)
+        else:
+            print("frame dropped")
+            temp_image = np.zeros((img_height, img_width))
         mean_image_array.append(temp_image)
-        camera.disarm()
-
-        measurement = osc.get_data()
-        t = measurement["time"]
-        v = measurement["ch2"]
-        t_matrix[i, n] = t
-        v_matrix[i, n] = v
-
-    images[i, ...] = np.nanmean(np.array(temp_image), axis=0)
+    images[i, ...] = np.nanmean(np.array(mean_image_array), axis=0)
     v_arr.append(np.nanmean(images[i]))
 
 
-    if args.liveview:
-        try:
-            scatter.remove()
-        except NameError:
-            pass
-        scatter = ax.scatter(pos[: len(v_arr)], v_arr, marker=".", color="k")
-        plt.pause(0.001)
+    # if args.liveview:
+    #     try:
+    #         scatter.remove()
+    #     except NameError:
+    #         pass
+    #     scatter = ax.scatter(pos[: len(v_arr)], v_arr, marker=".", color="k")
+    #     plt.pause(0.001)
 
+camera.disarm()
 
 
 #### exporting data to hdf5
